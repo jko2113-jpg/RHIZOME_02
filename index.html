@@ -89,7 +89,7 @@ function startMusic() {
 
 document.body.addEventListener("click", startMusic, { once: true });
 
-// ✅ REAL IMAGE FILES
+// ✅ IMAGE LIST
 const streamImages = [
   "images/516241.jpg",
   "images/5bd259f159aea7da80129db766bf2df1.jpg",
@@ -132,8 +132,14 @@ function startImageStream() {
 
   function nextImage() {
     const randomIndex = Math.floor(Math.random() * streamImages.length);
-    img.src = streamImages[randomIndex];
+    const safePath = encodeURI(streamImages[randomIndex]);
+    img.src = safePath;
   }
+
+  // skip broken images automatically
+  img.onerror = () => {
+    nextImage();
+  };
 
   nextImage();
   setInterval(nextImage, 250);
