@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Rhizomatic Website Network</title>
 
-  <!-- Public Sans font -->
+  <!-- Public Sans -->
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600&display=swap" rel="stylesheet">
 
   <!-- Cytoscape -->
@@ -14,7 +14,7 @@
     body {
       margin: 0;
       font-family: 'Public Sans', sans-serif;
-      background: #eaeaea; /* light grey */
+      background: #eaeaea;
     }
 
     #cy {
@@ -63,7 +63,7 @@
 
 <div id="cy"></div>
 <div id="preview"></div>
-<div id="info">Loading network...</div>
+<div id="info">Hover or click a node to explore</div>
 
 <script>
 fetch("network.json")
@@ -113,14 +113,17 @@ fetch("network.json")
         {
           selector: 'node',
           style: {
-            'label': 'data(label)',
-            'background-color': '#000',
+            'label': '', // hidden by default
+            'background-color': '#333',
             'font-size': '10px',
             'color': '#ffffff',
-            'text-outline-width': 0,
-            'font-family': 'Public Sans, sans-serif',
-            'text-valign': 'top',
-            'text-halign': 'center'
+            'font-family': 'Public Sans, sans-serif'
+          }
+        },
+        {
+          selector: 'node:hover',
+          style: {
+            'label': 'data(label)' // show label on hover
           }
         },
         {
@@ -128,7 +131,7 @@ fetch("network.json")
           style: {
             'width': 1,
             'line-color': '#ffffff',
-            'opacity': 0.6
+            'opacity': 0.3
           }
         }
       ],
@@ -169,8 +172,6 @@ fetch("network.json")
       const node = evt.target.data();
       window.open(node.url, "_blank");
     });
-
-    document.getElementById("info").innerText = "Click a node to explore";
 
   })
   .catch(error => {
