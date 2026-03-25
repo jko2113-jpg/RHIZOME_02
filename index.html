@@ -133,18 +133,18 @@ fetch("network.json")
       }
     });
 
-    // --- NODE INTERACTION ---
+    // --- CLICK: INFO + IMAGE ---
     cy.on('tap', 'node', function(evt) {
       const node = evt.target.data();
 
-      // INFO PANEL
+      // Info panel
       document.getElementById("info").innerHTML = `
         <strong>${node.label}</strong><br>
         <a href="${node.url}" target="_blank">Visit site</a><br><br>
-        <em>Shift + click to open directly</em>
+        <em>Double-click node to open directly</em>
       `;
 
-      // IMAGE PREVIEW
+      // Image preview
       const preview = document.getElementById("preview");
 
       preview.innerHTML = `
@@ -152,11 +152,12 @@ fetch("network.json")
       `;
 
       preview.style.display = "block";
+    });
 
-      // SHIFT CLICK → OPEN SITE
-      if (evt.originalEvent.shiftKey) {
-        window.open(node.url, "_blank");
-      }
+    // --- DOUBLE CLICK: OPEN SITE ---
+    cy.on('dbltap', 'node', function(evt) {
+      const node = evt.target.data();
+      window.open(node.url, "_blank");
     });
 
     document.getElementById("info").innerText = "Click a node to explore";
