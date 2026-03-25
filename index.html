@@ -31,11 +31,10 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      width: 240px;
-      height: 150px;
+      width: 300px;
+      height: 200px;
       display: none;
-      border: 1px solid #ccc;
-      background: #eee;
+      background: #000;
     }
 
     #preview img {
@@ -53,7 +52,6 @@
       background: #000;
       border: 1px solid #555;
       overflow: hidden;
-      z-index: 10;
     }
 
     #stream img {
@@ -89,7 +87,7 @@ function startMusic() {
 
 document.body.addEventListener("click", startMusic, { once: true });
 
-// ✅ IMAGE LIST
+// --- IMAGE STREAM (SLOWED DOWN) ---
 const streamImages = [
   "images/516241.jpg",
   "images/5bd259f159aea7da80129db766bf2df1.jpg",
@@ -132,26 +130,21 @@ function startImageStream() {
 
   function nextImage() {
     const randomIndex = Math.floor(Math.random() * streamImages.length);
-    const safePath = encodeURI(streamImages[randomIndex]);
-    img.src = safePath;
+    img.src = encodeURI(streamImages[randomIndex]);
   }
 
-  // skip broken images automatically
-  img.onerror = () => {
-    nextImage();
-  };
+  img.onerror = () => nextImage();
 
   nextImage();
-  setInterval(nextImage, 250);
+
+  // 🔥 slowed down to avoid rate limiting
+  setInterval(nextImage, 900);
 }
 
+// --- LOAD NETWORK ---
 fetch("network.json")
   .then(res => res.json())
   .then(data => {
-
-    function getPreviewImage(url) {
-      return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&embed=screenshot.url`;
-    }
 
     const nodes = data.map(n => ({
       data: { id: n.url, label: n.title || n.url, url: n.url }
@@ -172,7 +165,7 @@ fetch("network.json")
         {
           selector: 'node',
           style: {
-            'label': '',
+            'label': 'data(label)',
             'shape': 'ellipse',
             'width': 22,
             'height': 22,
@@ -181,17 +174,17 @@ fetch("network.json")
             'background-gradient-stop-positions': '0% 25% 60% 100%',
             'border-width': 1,
             'border-color': '#888',
+
+            'font-size': '9px',
+            'color': '#ffffff',
             'font-family': 'Public Sans',
             'font-weight': 300,
-            'color': '#ffffff'
-          }
-        },
-        {
-          selector: 'node:hover',
-          style: {
-            'label': 'data(label)',
-            'width': 26,
-            'height': 26
+
+            'text-valign': 'top',
+            'text-margin-y': -6,
+            'text-background-color': '#3a3a3a',
+            'text-background-opacity': 0.6,
+            'text-background-padding': '2px'
           }
         },
         {
@@ -204,11 +197,20 @@ fetch("network.json")
         }
       ],
 
-      layout: { name: 'cose' }
+      layout: {
+        name: 'cose',
+        animate: true,
+        animationDuration: 1500,
+
+        nodeRepulsion: 1400000,
+        idealEdgeLength: 200,
+        padding: 100
+      }
     });
 
     cy.on('tap', () => startMusic());
 
+    // 🔥 OPTIMIZED PREVIEW (NO MICROLINK)
     cy.on('tap', 'node', evt => {
       const node = evt.target.data();
 
@@ -218,11 +220,17 @@ fetch("network.json")
       `;
 
       const preview = document.getElementById("preview");
+      preview.innerHTML = `<img id="preview-img">`;
 
-      preview.innerHTML = `
-        <img src="${getPreviewImage(node.url)}"
-             onerror="this.src='https://www.google.com/s2/favicons?sz=128&domain_url=${node.url}'">
-      `;
+      const img = document.getElementById("preview-img");
+
+      // instant
+      img.src = `https://www.google.com/s2/favicons?sz=128&domain_url=${node.url}`;
+
+      // fast upgrade only
+      setTimeout(() => {
+        img.src = `https://image.thum.io/get/width/800/${node.url}`;
+      }, 300);
 
       preview.style.display = "block";
     });
@@ -231,7 +239,8 @@ fetch("network.json")
       window.open(evt.target.data().url, "_blank");
     });
 
-    startImageStream();
+    // 🔥 delayed start to reduce initial load burst
+    setTimeout(startImageStream, 1000);
   });
 </script>
 
