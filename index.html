@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <title>Rhizomatic Website Network</title>
 
-  <!-- Public Sans -->
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600&display=swap" rel="stylesheet">
-
-  <!-- Cytoscape -->
   <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
 
   <style>
@@ -28,7 +25,6 @@
       width: 100%;
       background: rgba(255,255,255,0.95);
       padding: 15px;
-      font-size: 14px;
     }
 
     #preview {
@@ -48,7 +44,6 @@
       object-fit: cover;
     }
 
-    /* 🔥 NEW STREAM WINDOW */
     #stream {
       position: fixed;
       top: 20px;
@@ -66,15 +61,10 @@
       height: 100%;
       object-fit: cover;
     }
-
-    a {
-      color: black;
-    }
   </style>
 </head>
 <body>
 
-<!-- 🔊 AUDIO -->
 <audio id="bg-music" loop>
   <source src="Overture.mp3" type="audio/mpeg">
 </audio>
@@ -88,35 +78,51 @@
 const audio = document.getElementById("bg-music");
 let musicStarted = false;
 
-// --- START MUSIC ---
 function startMusic() {
   if (!musicStarted) {
     audio.volume = 0.5;
-
-    const playPromise = audio.play();
-
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          musicStarted = true;
-          console.log("Music started");
-        })
-        .catch(err => {
-          console.log("Autoplay blocked:", err);
-        });
-    }
+    audio.play().then(() => {
+      musicStarted = true;
+    }).catch(() => {});
   }
 }
 
-// fallback click
 document.body.addEventListener("click", startMusic, { once: true });
 
-// --- IMAGE STREAM (EDIT FILENAMES HERE) ---
+// ✅ REAL IMAGE FILES
 const streamImages = [
-  "images/img1.jpg",
-  "images/img2.jpg",
-  "images/img3.jpg",
-  "images/img4.jpg"
+  "images/516241.jpg",
+  "images/5bd259f159aea7da80129db766bf2df1.jpg",
+  "images/Carter_i_G_11 (1).jpg",
+  "images/FBA_Yoko_01_model_elev_and_plan.width-1200-1024x649.jpg",
+  "images/FBA_Yokohama_undated_032-border.width-2000-e1601992539421-1024.jpg",
+  "images/FBA_Yokohama_undated_035-border.width-2000-e1601992515413-1024.jpg",
+  "images/Left-Centro-Direzionale-di-Torino-Right-Rossi-City-Hall-in-Scandicci.jpg",
+  "images/S63VOG7rVZ.jpg",
+  "images/Schermafbeelding-2020-05-13-om-14.24.57.png",
+  "images/Screenshot 2026-02-16 191959.png",
+  "images/Veldwerk-Architecten--Alternative-Histories--2019---Bel-Sozietat-fur-Architektur.jpg",
+  "images/ah-11-1-8278-g17.jpg",
+  "images/binding_beam_volumes_multiple.png",
+  "images/cc659441577a0e2014480954d2a9e207.jpg",
+  "images/dse_2015072902093254915340.jpg",
+  "images/f2525090cb65445289ca3a39e6c15cbe.jpg",
+  "images/fold_up_model.jpg",
+  "images/img_4004.jpg",
+  "images/levittown-ny-sketch.jpg",
+  "images/odawara-municipal-sports-complex-proposal.jpg",
+  "images/unnamed.jpg",
+  "images/why-tutankhamuns-tomb.jpg",
+  "images/willemen-infra-mockup-1300x317.jpg",
+  "images/251127_karelmarten_smallprint.jpg",
+  "images/349_DT_120601_002.tif.jpg",
+  "images/349_DT_120601_003.tif.jpg",
+  "images/349_DT_120601_004.tif.jpg",
+  "images/349_DT_120601_005.tif.jpg",
+  "images/349_MO_1102_008_diagram_studio.jpg",
+  "images/349_MO_1102_009_diagram_studio.jpg",
+  "images/3D-Model-Raycloud.png",
+  "images/3dcd6bad-88e8-42e0-a86b-f6a1447fbac3_1440x901.jpg"
 ];
 
 function startImageStream() {
@@ -130,32 +136,25 @@ function startImageStream() {
   }
 
   nextImage();
-  setInterval(nextImage, 250); // speed
+  setInterval(nextImage, 250);
 }
 
-// --- LOAD DATA ---
 fetch("network.json")
   .then(res => res.json())
   .then(data => {
 
     function getPreviewImage(url) {
-      return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
+      return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&embed=screenshot.url`;
     }
 
     const nodes = data.map(n => ({
-      data: {
-        id: n.url,
-        label: n.title || n.url,
-        url: n.url
-      }
+      data: { id: n.url, label: n.title || n.url, url: n.url }
     }));
 
     const edges = [];
     data.forEach(n => {
       (n.connections || []).forEach(t => {
-        edges.push({
-          data: { source: n.url, target: t }
-        });
+        edges.push({ data: { source: n.url, target: t } });
       });
     });
 
@@ -171,15 +170,11 @@ fetch("network.json")
             'shape': 'ellipse',
             'width': 22,
             'height': 22,
-
-            // chrome effect
             'background-fill': 'radial-gradient',
             'background-gradient-stop-colors': '#ffffff #bbbbbb #666666 #222222',
             'background-gradient-stop-positions': '0% 25% 60% 100%',
-
             'border-width': 1,
             'border-color': '#888',
-
             'font-family': 'Public Sans',
             'font-weight': 300,
             'color': '#ffffff'
@@ -203,29 +198,17 @@ fetch("network.json")
         }
       ],
 
-      layout: {
-        name: 'cose',
-        animate: true,
-        fit: true,
-        padding: 30,
-        nodeRepulsion: 800000,
-        idealEdgeLength: 100
-      }
+      layout: { name: 'cose' }
     });
 
-    // allow graph interaction to start music
-    cy.on('tap', () => {
-      startMusic();
-    });
+    cy.on('tap', () => startMusic());
 
-    // node click
     cy.on('tap', 'node', evt => {
       const node = evt.target.data();
 
       document.getElementById("info").innerHTML = `
         <strong>${node.label}</strong><br>
-        <a href="${node.url}" target="_blank">Visit site</a><br><br>
-        <em>Double-click node to open</em>
+        <a href="${node.url}" target="_blank">Visit site</a>
       `;
 
       const preview = document.getElementById("preview");
@@ -238,18 +221,11 @@ fetch("network.json")
       preview.style.display = "block";
     });
 
-    // double click
     cy.on('dbltap', 'node', evt => {
       window.open(evt.target.data().url, "_blank");
     });
 
-    // start stream AFTER everything loads
     startImageStream();
-
-  })
-  .catch(error => {
-    console.error(error);
-    document.getElementById("info").innerHTML = "Error loading network";
   });
 </script>
 
