@@ -65,23 +65,31 @@
 <div id="info">Click anywhere to begin</div>
 
 <script>
+const audio = document.getElementById("bg-music");
 let musicStarted = false;
 
-// --- START MUSIC ON FIRST USER INTERACTION ---
+// --- START MUSIC ---
 function startMusic() {
   if (!musicStarted) {
-    const audio = document.getElementById("bg-music");
+    audio.volume = 0.5;
 
-    audio.volume = 0.5; // 🔊 adjust volume here (0–1)
+    const playPromise = audio.play();
 
-    audio.play().catch(() => {});
-    musicStarted = true;
-
-    document.removeEventListener("click", startMusic);
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          musicStarted = true;
+          console.log("Music started");
+        })
+        .catch(err => {
+          console.log("Autoplay blocked:", err);
+        });
+    }
   }
 }
 
-document.addEventListener("click", startMusic);
+// --- GLOBAL CLICK (fallback) ---
+document.body.addEventListener("click", startMusic, { once: true });
 
 // --- LOAD DATA ---
 fetch("network.json")
@@ -170,7 +178,12 @@ fetch("network.json")
       }
     });
 
-    // --- CLICK ---
+    // 🔥 IMPORTANT: allow Cytoscape interaction to start music
+    cy.on('tap', () => {
+      startMusic();
+    });
+
+    // --- CLICK NODE ---
     cy.on('tap', 'node', evt => {
       const node = evt.target.data();
 
