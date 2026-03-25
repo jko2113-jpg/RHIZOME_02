@@ -48,6 +48,25 @@
       object-fit: cover;
     }
 
+    /* 🔥 NEW STREAM WINDOW */
+    #stream {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 220px;
+      height: 150px;
+      background: #000;
+      border: 1px solid #555;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    #stream img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
     a {
       color: black;
     }
@@ -61,6 +80,7 @@
 </audio>
 
 <div id="cy"></div>
+<div id="stream"></div>
 <div id="preview"></div>
 <div id="info">Click anywhere to begin</div>
 
@@ -88,23 +108,40 @@ function startMusic() {
   }
 }
 
-// --- GLOBAL CLICK (fallback) ---
+// fallback click
 document.body.addEventListener("click", startMusic, { once: true });
+
+// --- IMAGE STREAM (EDIT FILENAMES HERE) ---
+const streamImages = [
+  "images/img1.jpg",
+  "images/img2.jpg",
+  "images/img3.jpg",
+  "images/img4.jpg"
+];
+
+function startImageStream() {
+  const container = document.getElementById("stream");
+  const img = document.createElement("img");
+  container.appendChild(img);
+
+  function nextImage() {
+    const randomIndex = Math.floor(Math.random() * streamImages.length);
+    img.src = streamImages[randomIndex];
+  }
+
+  nextImage();
+  setInterval(nextImage, 250); // speed
+}
 
 // --- LOAD DATA ---
 fetch("network.json")
   .then(res => res.json())
   .then(data => {
 
-    if (!data || !Array.isArray(data)) {
-      throw new Error("Invalid JSON format");
-    }
-
     function getPreviewImage(url) {
       return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
     }
 
-    // --- CREATE NODES ---
     const nodes = data.map(n => ({
       data: {
         id: n.url,
@@ -113,7 +150,6 @@ fetch("network.json")
       }
     }));
 
-    // --- CREATE EDGES ---
     const edges = [];
     data.forEach(n => {
       (n.connections || []).forEach(t => {
@@ -123,7 +159,6 @@ fetch("network.json")
       });
     });
 
-    // --- CYTOSCAPE ---
     const cy = cytoscape({
       container: document.getElementById('cy'),
       elements: [...nodes, ...edges],
@@ -137,7 +172,7 @@ fetch("network.json")
             'width': 22,
             'height': 22,
 
-            // chrome-like gradient
+            // chrome effect
             'background-fill': 'radial-gradient',
             'background-gradient-stop-colors': '#ffffff #bbbbbb #666666 #222222',
             'background-gradient-stop-positions': '0% 25% 60% 100%',
@@ -178,12 +213,12 @@ fetch("network.json")
       }
     });
 
-    // 🔥 IMPORTANT: allow Cytoscape interaction to start music
+    // allow graph interaction to start music
     cy.on('tap', () => {
       startMusic();
     });
 
-    // --- CLICK NODE ---
+    // node click
     cy.on('tap', 'node', evt => {
       const node = evt.target.data();
 
@@ -203,10 +238,13 @@ fetch("network.json")
       preview.style.display = "block";
     });
 
-    // --- DOUBLE CLICK ---
+    // double click
     cy.on('dbltap', 'node', evt => {
       window.open(evt.target.data().url, "_blank");
     });
+
+    // start stream AFTER everything loads
+    startImageStream();
 
   })
   .catch(error => {
