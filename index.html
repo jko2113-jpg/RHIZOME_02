@@ -3,84 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <title>Rhizomatic Website Network</title>
-  <script src="https://unpkg.com/cytoscape@3.25.2/dist/cytoscape.min.js"></script>
-  <script src="https://unpkg.com/cytoscape-cola@2.5.0/cytoscape-cola.js"></script>
+
+  <!-- Cytoscape -->
+  <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    #cy { width: 100%; height: 100vh; display: block; }
-    h1 { text-align: center; padding: 10px; background: #f0f0f0; margin: 0; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
+
+    #cy {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+
+    #info {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 30%;
+      overflow-y: auto;
+      background: rgba(255,255,255,0.95);
+      border-top: 1px solid #ccc;
+      padding: 15px;
+      font-size: 14px;
+    }
+
+    a {
+      color: blue;
+    }
   </style>
 </head>
 <body>
-  <h1>Rhizomatic Website Network</h1>
-  <div id="cy"></div>
 
-  <script>
-    // Generate a color palette
-    const colors = [
-      '#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4',
-      '#46f0f0','#f032e6','#bcf60c','#fabebe','#008080','#e6beff',
-      '#9a6324','#fffac8','#800000','#aaffc3','#808000','#ffd8b1',
-      '#000075','#808080'
-    ];
+<div id="cy"></div>
+<div id="info">Click a node to explore</div>
 
-    fetch('network.json')
-      .then(response => response.json())
-      .then(data => {
+<script>
+fetch("network.json")
+  .then(res => res.json())
+  .then(data => {
 
-        // Simple clustering: assign color based on connected component
-        const cy = cytoscape({
-          container: document.getElementById('cy'),
-          elements: {
-            nodes: data.nodes.map(n => ({ data: { id: n.id, label: n.label, url: n.url } })),
-            edges: data.edges.map(e => ({ data: { source: e.source, target: e.target, weight: e.weight } }))
-          },
-          layout: { name: 'cose', animate: true, fit: true },
-          style: [
-            {
-              selector: 'node',
-              style: {
-                'label': 'data(label)',
-                'text-valign': 'center',
-                'text-halign': 'center',
-                'font-size': 10,
-                'width': 20,
-                'height': 20
-              }
-            },
-            {
-              selector: 'edge',
-              style: {
-                'width': 'mapData(weight, 0, 1, 1, 5)',
-                'line-color': '#95a5a6'
-              }
-            },
-            {
-              selector: 'node:hover',
-              style: { 'background-color': '#e74c3c', 'label': 'data(label)' }
+    // --- CREATE NODES ---
+    const nodes = data.map(node => ({
+      data: {
+        id: node.url,
+        label: node.title || node.url,
+        url: node.url
+      }
+    }));
+
+    // --- CREATE EDGES ---
+    const edges = [];
+
+    data.forEach(node => {
+      if (node.connections) {
+        node.connections.forEach(target => {
+          edges.push({
+            data: {
+              source: node.url,
+              target: target
             }
-          ]
-        });
-
-        // Compute connected components for clustering
-        const components = cy.elements().components();
-        components.forEach((comp, idx) => {
-          const color = colors[idx % colors.length];
-          comp.forEach(ele => {
-            if(ele.isNode()) ele.style('background-color', color);
           });
         });
+      }
+    });
 
-        // Make nodes clickable
-        cy.on('tap', 'node', function(evt){
-          const node = evt.target;
-          if(node.data('url')){
-            window.open(node.data('url'), '_blank');
+    // --- INIT CYTOSCAPE ---
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+
+      elements: [
+        ...nodes,
+        ...edges
+      ],
+
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'label': 'data(label)',
+            'font-size': '8px',
+            'background-color': '#000',
+            'color': '#000',
+            'text-valign': 'top',
+            'text-halign': 'center'
           }
-        });
+        },
+        {
+          selector: 'edge',
+          style: {
+            'width': 1,
+            'line-color': '#ccc'
+          }
+        }
+      ],
 
-      })
-      .catch(err => console.error('Failed to load network.json', err));
-  </script>
+      layout: {
+        name: 'cose',
+        animate: true,
+        fit: true
+      }
+    });
+
+    // --- CLICK INTERACTION ---
+    cy.on('tap', 'node', function(evt) {
+      const node = evt.target.data();
+
+      document.getElementById("info").innerHTML = `
+        <strong>${node.label}</strong><br>
+        <a href="${node.url}" target="_blank">Visit site</a>
+      `;
+    });
+
+  })
+  .catch(error => {
+    console.error("Error loading network.json:", error);
+    document.getElementById("info").innerText = "Error loading data.";
+  });
+</script>
+
 </body>
 </html>
