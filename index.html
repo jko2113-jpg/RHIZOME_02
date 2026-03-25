@@ -32,6 +32,24 @@
       font-size: 14px;
     }
 
+    #preview {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 240px;
+      height: 150px;
+      background: #eee;
+      border: 1px solid #ccc;
+      overflow: hidden;
+      display: none;
+    }
+
+    #preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
     a {
       color: blue;
     }
@@ -40,6 +58,7 @@
 <body>
 
 <div id="cy"></div>
+<div id="preview"></div>
 <div id="info">Loading network...</div>
 
 <script>
@@ -87,9 +106,9 @@ fetch("network.json")
           selector: 'node',
           style: {
             'label': 'data(label)',
-            'background-color': 'red',
-            'font-size': '10px',
-            'color': 'black',
+            'background-color': '#000',
+            'font-size': '9px',
+            'color': '#000',
             'text-valign': 'top',
             'text-halign': 'center'
           }
@@ -104,35 +123,39 @@ fetch("network.json")
       ],
 
       layout: {
-        name: 'grid',
-        fit: true
+        name: 'cose',
+        animate: true,
+        fit: true,
+        padding: 30,
+        nodeRepulsion: 800000,
+        idealEdgeLength: 100,
+        edgeElasticity: 0.1
       }
     });
 
-    // --- SINGLE + DOUBLE CLICK LOGIC ---
-    let tappedBefore;
-    let tappedTimeout;
-
+    // --- NODE INTERACTION ---
     cy.on('tap', 'node', function(evt) {
       const node = evt.target.data();
 
-      if (tappedTimeout && tappedBefore === node.id) {
-        // DOUBLE CLICK → open link
-        clearTimeout(tappedTimeout);
-        tappedTimeout = null;
+      // INFO PANEL
+      document.getElementById("info").innerHTML = `
+        <strong>${node.label}</strong><br>
+        <a href="${node.url}" target="_blank">Visit site</a><br><br>
+        <em>Shift + click to open directly</em>
+      `;
+
+      // IMAGE PREVIEW
+      const preview = document.getElementById("preview");
+
+      preview.innerHTML = `
+        <img src="https://image.thum.io/get/width/600/${node.url}">
+      `;
+
+      preview.style.display = "block";
+
+      // SHIFT CLICK → OPEN SITE
+      if (evt.originalEvent.shiftKey) {
         window.open(node.url, "_blank");
-
-      } else {
-        // SINGLE CLICK → wait briefly
-        tappedBefore = node.id;
-
-        tappedTimeout = setTimeout(() => {
-          document.getElementById("info").innerHTML = `
-            <strong>${node.label}</strong><br>
-            <a href="${node.url}" target="_blank">Visit site</a>
-          `;
-          tappedTimeout = null;
-        }, 250);
       }
     });
 
@@ -141,6 +164,7 @@ fetch("network.json")
   })
   .catch(error => {
     console.error("Error loading network:", error);
+
     document.getElementById("info").innerHTML = `
       <strong>Error loading network.json</strong><br>
       Check console for details.
