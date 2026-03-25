@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Rhizomatic Website Network</title>
 
-  <!-- Cytoscape -->
   <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
 
   <style>
@@ -45,16 +44,11 @@
 
 <script>
 fetch("network.json")
-  .then(response => {
-    console.log("Fetch response:", response);
-    return response.json();
-  })
+  .then(response => response.json())
   .then(data => {
-    console.log("Loaded data:", data);
 
-    // --- SAFETY CHECK ---
     if (!data || !Array.isArray(data)) {
-      throw new Error("JSON is not an array");
+      throw new Error("Invalid JSON format");
     }
 
     // --- CREATE NODES ---
@@ -82,17 +76,11 @@ fetch("network.json")
       }
     });
 
-    console.log("Nodes:", nodes.length);
-    console.log("Edges:", edges.length);
-
     // --- INIT CYTOSCAPE ---
     const cy = cytoscape({
       container: document.getElementById('cy'),
 
-      elements: [
-        ...nodes,
-        ...edges
-      ],
+      elements: [...nodes, ...edges],
 
       style: [
         {
@@ -116,30 +104,46 @@ fetch("network.json")
       ],
 
       layout: {
-        name: 'grid',   // FORCE visible layout
+        name: 'grid',
         fit: true
       }
     });
 
-    // --- CLICK INTERACTION ---
+    // --- SINGLE + DOUBLE CLICK LOGIC ---
+    let tappedBefore;
+    let tappedTimeout;
+
     cy.on('tap', 'node', function(evt) {
       const node = evt.target.data();
 
-      document.getElementById("info").innerHTML = `
-        <strong>${node.label}</strong><br>
-        <a href="${node.url}" target="_blank">Visit site</a>
-      `;
+      if (tappedTimeout && tappedBefore === node.id) {
+        // DOUBLE CLICK → open link
+        clearTimeout(tappedTimeout);
+        tappedTimeout = null;
+        window.open(node.url, "_blank");
+
+      } else {
+        // SINGLE CLICK → wait briefly
+        tappedBefore = node.id;
+
+        tappedTimeout = setTimeout(() => {
+          document.getElementById("info").innerHTML = `
+            <strong>${node.label}</strong><br>
+            <a href="${node.url}" target="_blank">Visit site</a>
+          `;
+          tappedTimeout = null;
+        }, 250);
+      }
     });
 
     document.getElementById("info").innerText = "Click a node to explore";
 
   })
   .catch(error => {
-    console.error("ERROR LOADING JSON:", error);
-
+    console.error("Error loading network:", error);
     document.getElementById("info").innerHTML = `
-      <strong>Error loading network.</strong><br>
-      Open console to debug.
+      <strong>Error loading network.json</strong><br>
+      Check console for details.
     `;
   });
 </script>
