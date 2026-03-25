@@ -20,18 +20,13 @@
     #cy {
       width: 100vw;
       height: 100vh;
-      display: block;
     }
 
     #info {
       position: fixed;
       bottom: 0;
-      left: 0;
       width: 100%;
-      max-height: 30%;
-      overflow-y: auto;
       background: rgba(255,255,255,0.95);
-      border-top: 1px solid #ccc;
       padding: 15px;
       font-size: 14px;
     }
@@ -42,10 +37,9 @@
       right: 20px;
       width: 240px;
       height: 150px;
-      background: #eee;
-      border: 1px solid #ccc;
-      overflow: hidden;
       display: none;
+      border: 1px solid #ccc;
+      background: #eee;
     }
 
     #preview img {
@@ -61,13 +55,37 @@
 </head>
 <body>
 
+<!-- 🔊 AUDIO -->
+<audio id="bg-music" loop>
+  <source src="Overture.mp3" type="audio/mpeg">
+</audio>
+
 <div id="cy"></div>
 <div id="preview"></div>
-<div id="info">Hover or click a node to explore</div>
+<div id="info">Click anywhere to begin</div>
 
 <script>
+let musicStarted = false;
+
+// --- START MUSIC ON FIRST USER INTERACTION ---
+function startMusic() {
+  if (!musicStarted) {
+    const audio = document.getElementById("bg-music");
+
+    audio.volume = 0.5; // 🔊 adjust volume here (0–1)
+
+    audio.play().catch(() => {});
+    musicStarted = true;
+
+    document.removeEventListener("click", startMusic);
+  }
+}
+
+document.addEventListener("click", startMusic);
+
+// --- LOAD DATA ---
 fetch("network.json")
-  .then(response => response.json())
+  .then(res => res.json())
   .then(data => {
 
     if (!data || !Array.isArray(data)) {
@@ -79,34 +97,27 @@ fetch("network.json")
     }
 
     // --- CREATE NODES ---
-    const nodes = data.map(node => ({
+    const nodes = data.map(n => ({
       data: {
-        id: node.url,
-        label: node.title || node.url,
-        url: node.url
+        id: n.url,
+        label: n.title || n.url,
+        url: n.url
       }
     }));
 
     // --- CREATE EDGES ---
     const edges = [];
-
-    data.forEach(node => {
-      if (node.connections && Array.isArray(node.connections)) {
-        node.connections.forEach(target => {
-          edges.push({
-            data: {
-              source: node.url,
-              target: target
-            }
-          });
+    data.forEach(n => {
+      (n.connections || []).forEach(t => {
+        edges.push({
+          data: { source: n.url, target: t }
         });
-      }
+      });
     });
 
-    // --- INIT CYTOSCAPE ---
+    // --- CYTOSCAPE ---
     const cy = cytoscape({
       container: document.getElementById('cy'),
-
       elements: [...nodes, ...edges],
 
       style: [
@@ -118,7 +129,7 @@ fetch("network.json")
             'width': 22,
             'height': 22,
 
-            // ✨ Chrome-like gradient
+            // chrome-like gradient
             'background-fill': 'radial-gradient',
             'background-gradient-stop-colors': '#ffffff #bbbbbb #666666 #222222',
             'background-gradient-stop-positions': '0% 25% 60% 100%',
@@ -126,10 +137,9 @@ fetch("network.json")
             'border-width': 1,
             'border-color': '#888',
 
-            'font-size': '10px',
-            'color': '#ffffff',
-            'font-family': 'Public Sans, sans-serif',
-            'font-weight': '300'
+            'font-family': 'Public Sans',
+            'font-weight': 300,
+            'color': '#ffffff'
           }
         },
         {
@@ -156,13 +166,12 @@ fetch("network.json")
         fit: true,
         padding: 30,
         nodeRepulsion: 800000,
-        idealEdgeLength: 100,
-        edgeElasticity: 0.1
+        idealEdgeLength: 100
       }
     });
 
-    // --- CLICK: INFO + IMAGE ---
-    cy.on('tap', 'node', function(evt) {
+    // --- CLICK ---
+    cy.on('tap', 'node', evt => {
       const node = evt.target.data();
 
       document.getElementById("info").innerHTML = `
@@ -181,20 +190,15 @@ fetch("network.json")
       preview.style.display = "block";
     });
 
-    // --- DOUBLE CLICK: OPEN SITE ---
-    cy.on('dbltap', 'node', function(evt) {
-      const node = evt.target.data();
-      window.open(node.url, "_blank");
+    // --- DOUBLE CLICK ---
+    cy.on('dbltap', 'node', evt => {
+      window.open(evt.target.data().url, "_blank");
     });
 
   })
   .catch(error => {
-    console.error("Error loading network:", error);
-
-    document.getElementById("info").innerHTML = `
-      <strong>Error loading network.json</strong><br>
-      Check console for details.
-    `;
+    console.error(error);
+    document.getElementById("info").innerHTML = "Error loading network";
   });
 </script>
 
