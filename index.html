@@ -31,17 +31,19 @@
       position: fixed;
       top: 20px;
       right: 20px;
-      width: 240px;
-      height: 150px;
+      width: 300px;
+      height: 200px;
       display: none;
       border: 1px solid #ccc;
-      background: #eee;
+      background: #000;
     }
 
+    /* 🔥 improved preview rendering */
     #preview img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      background: #000;
     }
 
     #stream {
@@ -89,7 +91,7 @@ function startMusic() {
 
 document.body.addEventListener("click", startMusic, { once: true });
 
-// ✅ IMAGE LIST
+// --- IMAGE STREAM ---
 const streamImages = [
   "images/516241.jpg",
   "images/5bd259f159aea7da80129db766bf2df1.jpg",
@@ -132,26 +134,19 @@ function startImageStream() {
 
   function nextImage() {
     const randomIndex = Math.floor(Math.random() * streamImages.length);
-    const safePath = encodeURI(streamImages[randomIndex]);
-    img.src = safePath;
+    img.src = encodeURI(streamImages[randomIndex]);
   }
 
-  // skip broken images automatically
-  img.onerror = () => {
-    nextImage();
-  };
+  img.onerror = () => nextImage();
 
   nextImage();
   setInterval(nextImage, 250);
 }
 
+// --- LOAD NETWORK ---
 fetch("network.json")
   .then(res => res.json())
   .then(data => {
-
-    function getPreviewImage(url) {
-      return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&embed=screenshot.url`;
-    }
 
     const nodes = data.map(n => ({
       data: { id: n.url, label: n.title || n.url, url: n.url }
@@ -220,9 +215,16 @@ fetch("network.json")
       const preview = document.getElementById("preview");
 
       preview.innerHTML = `
-        <img src="${getPreviewImage(node.url)}"
-             onerror="this.src='https://www.google.com/s2/favicons?sz=128&domain_url=${node.url}'">
+        <img id="preview-img"
+        src="https://api.microlink.io/?url=${encodeURIComponent(node.url)}&screenshot=true&screenshot.fullPage=true&meta=false&embed=screenshot.url">
       `;
+
+      const img = document.getElementById("preview-img");
+
+      // fallback to thum.io
+      img.onerror = () => {
+        img.src = `https://image.thum.io/get/width/800/${node.url}`;
+      };
 
       preview.style.display = "block";
     });
