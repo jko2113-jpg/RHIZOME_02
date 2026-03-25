@@ -4,32 +4,17 @@
   <meta charset="UTF-8">
   <title>Rhizomatic Website Network</title>
 
+  <!-- Public Sans font -->
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <!-- Cytoscape -->
   <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
 
   <style>
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-    }
-
-    /* Background container */
-    #bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      overflow: hidden;
-    }
-
-    #bg-img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0.15;
-      filter: blur(5px);
-      transition: opacity 1.5s ease-in-out;
+      font-family: 'Public Sans', sans-serif;
+      background: #eaeaea; /* light grey */
     }
 
     #cy {
@@ -70,15 +55,11 @@
     }
 
     a {
-      color: blue;
+      color: black;
     }
   </style>
 </head>
 <body>
-
-<div id="bg">
-  <img id="bg-img" />
-</div>
 
 <div id="cy"></div>
 <div id="preview"></div>
@@ -93,44 +74,9 @@ fetch("network.json")
       throw new Error("Invalid JSON format");
     }
 
-    // --- IMAGE HELPER ---
     function getPreviewImage(url) {
       return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
     }
-
-    // --- BACKGROUND CYCLING (FIXED) ---
-    function startBackgroundCycle(data) {
-      const img = document.getElementById("bg-img");
-
-      function changeBackground() {
-        const randomNode = data[Math.floor(Math.random() * data.length)];
-        const url = randomNode.url;
-
-        const newImage = new Image();
-        const imageUrl = getPreviewImage(url);
-
-        newImage.src = imageUrl;
-
-        newImage.onload = () => {
-          img.style.opacity = 0;
-
-          setTimeout(() => {
-            img.src = imageUrl;
-            img.style.opacity = 0.15;
-          }, 300);
-        };
-
-        newImage.onerror = () => {
-          img.src = `https://www.google.com/s2/favicons?sz=128&domain_url=${url}`;
-          img.style.opacity = 0.1;
-        };
-      }
-
-      changeBackground();
-      setInterval(changeBackground, 6000);
-    }
-
-    startBackgroundCycle(data);
 
     // --- CREATE NODES ---
     const nodes = data.map(node => ({
@@ -169,8 +115,10 @@ fetch("network.json")
           style: {
             'label': 'data(label)',
             'background-color': '#000',
-            'font-size': '9px',
-            'color': '#000',
+            'font-size': '10px',
+            'color': '#ffffff',
+            'text-outline-width': 0,
+            'font-family': 'Public Sans, sans-serif',
             'text-valign': 'top',
             'text-halign': 'center'
           }
@@ -179,7 +127,8 @@ fetch("network.json")
           selector: 'edge',
           style: {
             'width': 1,
-            'line-color': '#ccc'
+            'line-color': '#ffffff',
+            'opacity': 0.6
           }
         }
       ],
