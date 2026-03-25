@@ -11,13 +11,13 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      overflow: hidden;
     }
 
     #cy {
       width: 100vw;
       height: 100vh;
       display: block;
+      background: #ffffff;
     }
 
     #info {
@@ -41,12 +41,21 @@
 <body>
 
 <div id="cy"></div>
-<div id="info">Click a node to explore</div>
+<div id="info">Loading network...</div>
 
 <script>
 fetch("network.json")
-  .then(res => res.json())
+  .then(response => {
+    console.log("Fetch response:", response);
+    return response.json();
+  })
   .then(data => {
+    console.log("Loaded data:", data);
+
+    // --- SAFETY CHECK ---
+    if (!data || !Array.isArray(data)) {
+      throw new Error("JSON is not an array");
+    }
 
     // --- CREATE NODES ---
     const nodes = data.map(node => ({
@@ -61,7 +70,7 @@ fetch("network.json")
     const edges = [];
 
     data.forEach(node => {
-      if (node.connections) {
+      if (node.connections && Array.isArray(node.connections)) {
         node.connections.forEach(target => {
           edges.push({
             data: {
@@ -72,6 +81,9 @@ fetch("network.json")
         });
       }
     });
+
+    console.log("Nodes:", nodes.length);
+    console.log("Edges:", edges.length);
 
     // --- INIT CYTOSCAPE ---
     const cy = cytoscape({
@@ -87,9 +99,9 @@ fetch("network.json")
           selector: 'node',
           style: {
             'label': 'data(label)',
-            'font-size': '8px',
-            'background-color': '#000',
-            'color': '#000',
+            'background-color': 'red',
+            'font-size': '10px',
+            'color': 'black',
             'text-valign': 'top',
             'text-halign': 'center'
           }
@@ -104,8 +116,7 @@ fetch("network.json")
       ],
 
       layout: {
-        name: 'cose',
-        animate: true,
+        name: 'grid',   // FORCE visible layout
         fit: true
       }
     });
@@ -120,10 +131,16 @@ fetch("network.json")
       `;
     });
 
+    document.getElementById("info").innerText = "Click a node to explore";
+
   })
   .catch(error => {
-    console.error("Error loading network.json:", error);
-    document.getElementById("info").innerText = "Error loading data.";
+    console.error("ERROR LOADING JSON:", error);
+
+    document.getElementById("info").innerHTML = `
+      <strong>Error loading network.</strong><br>
+      Open console to debug.
+    `;
   });
 </script>
 
