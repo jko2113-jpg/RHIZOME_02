@@ -87,21 +87,11 @@ function startMusic() {
 
 document.body.addEventListener("click", startMusic, { once: true });
 
-// --- IMAGE STREAM (SLOWED DOWN) ---
+// --- CLEAN IMAGE LIST (only reliable files) ---
 const streamImages = [
   "images/516241.jpg",
   "images/5bd259f159aea7da80129db766bf2df1.jpg",
-  "images/Carter_i_G_11 (1).jpg",
-  "images/FBA_Yoko_01_model_elev_and_plan.width-1200-1024x649.jpg",
-  "images/FBA_Yokohama_undated_032-border.width-2000-e1601992539421-1024.jpg",
-  "images/FBA_Yokohama_undated_035-border.width-2000-e1601992515413-1024.jpg",
-  "images/Left-Centro-Direzionale-di-Torino-Right-Rossi-City-Hall-in-Scandicci.jpg",
   "images/S63VOG7rVZ.jpg",
-  "images/Schermafbeelding-2020-05-13-om-14.24.57.png",
-  "images/Screenshot 2026-02-16 191959.png",
-  "images/Veldwerk-Architecten--Alternative-Histories--2019---Bel-Sozietat-fur-Architektur.jpg",
-  "images/ah-11-1-8278-g17.jpg",
-  "images/binding_beam_volumes_multiple.png",
   "images/cc659441577a0e2014480954d2a9e207.jpg",
   "images/dse_2015072902093254915340.jpg",
   "images/f2525090cb65445289ca3a39e6c15cbe.jpg",
@@ -113,10 +103,6 @@ const streamImages = [
   "images/why-tutankhamuns-tomb.jpg",
   "images/willemen-infra-mockup-1300x317.jpg",
   "images/251127_karelmarten_smallprint.jpg",
-  "images/349_DT_120601_002.tif.jpg",
-  "images/349_DT_120601_003.tif.jpg",
-  "images/349_DT_120601_004.tif.jpg",
-  "images/349_DT_120601_005.tif.jpg",
   "images/349_MO_1102_008_diagram_studio.jpg",
   "images/349_MO_1102_009_diagram_studio.jpg",
   "images/3D-Model-Raycloud.png",
@@ -129,15 +115,16 @@ function startImageStream() {
   container.appendChild(img);
 
   function nextImage() {
-    const randomIndex = Math.floor(Math.random() * streamImages.length);
-    img.src = encodeURI(streamImages[randomIndex]);
+    const i = Math.floor(Math.random() * streamImages.length);
+    img.src = streamImages[i];
   }
 
-  img.onerror = () => nextImage();
+  img.onerror = () => {
+    console.log("Image failed:", img.src);
+    nextImage();
+  };
 
   nextImage();
-
-  // 🔥 slowed down to avoid rate limiting
   setInterval(nextImage, 900);
 }
 
@@ -201,7 +188,6 @@ fetch("network.json")
         name: 'cose',
         animate: true,
         animationDuration: 1500,
-
         nodeRepulsion: 1400000,
         idealEdgeLength: 200,
         padding: 100
@@ -210,7 +196,7 @@ fetch("network.json")
 
     cy.on('tap', () => startMusic());
 
-    // 🔥 OPTIMIZED PREVIEW (NO MICROLINK)
+    // --- SIMPLIFIED + RELIABLE PREVIEW ---
     cy.on('tap', 'node', evt => {
       const node = evt.target.data();
 
@@ -224,13 +210,12 @@ fetch("network.json")
 
       const img = document.getElementById("preview-img");
 
-      // instant
-      img.src = `https://www.google.com/s2/favicons?sz=128&domain_url=${node.url}`;
+      // fast + reliable preview
+      img.src = `https://image.thum.io/get/width/800/${node.url}`;
 
-      // fast upgrade only
-      setTimeout(() => {
-        img.src = `https://image.thum.io/get/width/800/${node.url}`;
-      }, 300);
+      img.onerror = () => {
+        img.src = `https://www.google.com/s2/favicons?sz=128&domain_url=${node.url}`;
+      };
 
       preview.style.display = "block";
     });
@@ -239,7 +224,6 @@ fetch("network.json")
       window.open(evt.target.data().url, "_blank");
     });
 
-    // 🔥 delayed start to reduce initial load burst
     setTimeout(startImageStream, 1000);
   });
 </script>
