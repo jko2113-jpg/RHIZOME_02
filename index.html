@@ -14,7 +14,7 @@
     body {
       margin: 0;
       font-family: 'Public Sans', sans-serif;
-      background: #eaeaea;
+      background: #2b2b2b; /* DARK GREY */
     }
 
     #cy {
@@ -113,8 +113,8 @@ fetch("network.json")
         {
           selector: 'node',
           style: {
-            'label': '', // hidden by default
-            'background-color': '#333',
+            'label': '',
+            'background-color': '#444',
             'font-size': '10px',
             'color': '#ffffff',
             'font-family': 'Public Sans, sans-serif'
@@ -123,7 +123,7 @@ fetch("network.json")
         {
           selector: 'node:hover',
           style: {
-            'label': 'data(label)' // show label on hover
+            'label': 'data(label)'
           }
         },
         {
