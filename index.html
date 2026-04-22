@@ -321,10 +321,12 @@ fetch('network.json')
       }
     }));
 
+    const nodeIds = new Set(nodes.map(n => n.data.id));
     const edgeSet = new Set();
     const edges = [];
     data.forEach(n => {
       (n.connections || []).forEach(t => {
+        if (!nodeIds.has(t)) return; // skip edges to nonexistent nodes
         const key = [n.url, t].sort().join('|||');
         if (!edgeSet.has(key)) {
           edgeSet.add(key);
