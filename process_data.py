@@ -245,6 +245,62 @@ def process(csv_path, old_json_path):
     return nodes
 
 
+def jaccard(a, b):
+    sa, sb = set(a), set(b)
+    return len(sa & sb) / len(sa | sb) if (sa | sb) else 0
+
+
+def auto_connect(nodes, min_connections=3, max_new=4):
+    """Ensure every node has at least min_connections by adding edges
+    based on tag similarity (Jaccard) + same-category bonus."""
+    import random
+    random.seed(42)
+
+    url_set = {n['url'] for n in nodes if n['url']}
+
+    for node in nodes:
+        if not node['url']:
+            continue
+
+        # Validate existing connections
+        existing = set(c for c in node['connections'] if c in url_set)
+        node['connections'] = list(existing)
+
+        if len(existing) >= min_connections:
+            continue
+
+        needed = min(max_new, min_connections - len(existing))
+
+        # Score candidates
+        scores = []
+        for other in nodes:
+            if not other['url'] or other['url'] == node['url']:
+                continue
+            if other['url'] in existing:
+                continue
+            sim = jaccard(node['tags'], other['tags'])
+            bonus = 0.25 if other['category'] == node['category'] else 0
+            total = sim + bonus
+            if total > 0:
+                scores.append((total, other['url']))
+
+        scores.sort(reverse=True)
+        for _, url in scores[:needed]:
+            node['connections'].append(url)
+
+        # Fall back to random same-category if still under minimum
+        if len(node['connections']) < min_connections:
+            pool = [n['url'] for n in nodes
+                    if n['url'] and n['url'] != node['url']
+                    and n['url'] not in node['connections']
+                    and n['category'] == node['category']]
+            random.shuffle(pool)
+            still_needed = min_connections - len(node['connections'])
+            node['connections'].extend(pool[:still_needed])
+
+    return nodes
+
+
 def write_csv(nodes, path):
     with open(path, 'w', newline='', encoding='utf-8') as f:
         w = csv.DictWriter(f, fieldnames=['id', 'url', 'title', 'description',
@@ -276,6 +332,7 @@ def write_json(nodes, path):
 if __name__ == '__main__':
     BASE = '/home/user/RHIZOME_02'
     nodes = process(f'{BASE}/LIST.csv', f'{BASE}/network.json')
+    nodes = auto_connect(nodes, min_connections=3, max_new=4)
     write_csv(nodes, f'{BASE}/LIST_clean.csv')
     out = write_json(nodes, f'{BASE}/network.json')
 
