@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Rhizomatic Website Network</title>
-
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;600&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
 
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      margin: 0;
       font-family: 'Public Sans', sans-serif;
-      background: #3a3a3a;
+      background: #1a1a1a;
     }
 
     #cy {
@@ -19,22 +19,166 @@
       height: 100vh;
     }
 
+    /* ── Image stream ─────────────────────────── */
+    #stream {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 200px;
+      height: 130px;
+      background: #000;
+      border: 1px solid #3a3a3a;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    #stream img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ── Legend ───────────────────────────────── */
+    #legend {
+      position: fixed;
+      top: 170px;
+      left: 20px;
+      width: 200px;
+      background: rgba(12, 12, 12, 0.9);
+      border: 1px solid #3a3a3a;
+      z-index: 10;
+    }
+
+    #legend-header {
+      padding: 8px 12px;
+      color: #666;
+      letter-spacing: 0.14em;
+      font-size: 10px;
+      font-weight: 600;
+      border-bottom: 1px solid #2a2a2a;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    #legend-header:hover { color: #aaa; }
+
+    #legend-items {
+      padding: 4px 0;
+      max-height: 340px;
+      overflow-y: auto;
+    }
+
+    #legend-items::-webkit-scrollbar { width: 3px; }
+    #legend-items::-webkit-scrollbar-thumb { background: #333; }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 12px;
+      cursor: pointer;
+      color: #aaa;
+      transition: background 0.1s, color 0.1s;
+      user-select: none;
+    }
+
+    .legend-item:hover { background: rgba(255,255,255,0.04); color: #ddd; }
+    .legend-item.active { color: #fff; }
+    .legend-item.dimmed { color: #3a3a3a; }
+    .legend-item.dimmed .legend-dot { opacity: 0.2; }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-name { flex: 1; font-size: 11px; }
+    .legend-count { color: #444; font-size: 10px; }
+    .legend-item.active .legend-count { color: #777; }
+
+    /* ── Info panel ───────────────────────────── */
     #info {
       position: fixed;
       bottom: 0;
-      width: 100%;
-      background: rgba(255,255,255,0.95);
-      padding: 15px;
+      left: 0;
+      right: 0;
+      background: rgba(10, 10, 10, 0.96);
+      border-top: 1px solid #2a2a2a;
+      padding: 12px 20px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-height: 56px;
     }
 
+    #info-text { flex: 1; }
+
+    #info-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e0e0e0;
+      margin-bottom: 5px;
+    }
+
+    #info-meta {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    #info-category {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      letter-spacing: 0.08em;
+    }
+
+    .tag {
+      font-size: 10px;
+      color: #666;
+      background: rgba(255,255,255,0.05);
+      padding: 2px 6px;
+    }
+
+    #info-description {
+      color: #777;
+      font-size: 11px;
+      margin-top: 4px;
+      font-weight: 300;
+    }
+
+    #info-link {
+      color: #aaa;
+      text-decoration: none;
+      font-size: 11px;
+      white-space: nowrap;
+      padding: 6px 14px;
+      border: 1px solid #333;
+      letter-spacing: 0.06em;
+      flex-shrink: 0;
+    }
+
+    #info-link:hover { color: #fff; border-color: #777; }
+
+    /* ── Preview thumbnail ────────────────────── */
     #preview {
       position: fixed;
       top: 20px;
       right: 20px;
-      width: 300px;
-      height: 200px;
+      width: 260px;
+      height: 165px;
       display: none;
-      background: #000;
+      background: #111;
+      border: 1px solid #3a3a3a;
+      z-index: 10;
+      overflow: hidden;
     }
 
     #preview img {
@@ -43,22 +187,26 @@
       object-fit: cover;
     }
 
-    #stream {
+    /* ── Reset filter button ──────────────────── */
+    #reset-filter {
+      display: none;
       position: fixed;
       top: 20px;
-      left: 20px;
-      width: 220px;
-      height: 150px;
-      background: #000;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(12, 12, 12, 0.9);
       border: 1px solid #555;
-      overflow: hidden;
+      color: #aaa;
+      padding: 6px 18px;
+      font-family: 'Public Sans', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      cursor: pointer;
+      z-index: 20;
     }
 
-    #stream img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    #reset-filter:hover { border-color: #aaa; color: #fff; }
   </style>
 </head>
 <body>
@@ -69,25 +217,61 @@
 
 <div id="cy"></div>
 <div id="stream"></div>
+
+<div id="legend">
+  <div id="legend-header">CATEGORIES <span id="legend-toggle">−</span></div>
+  <div id="legend-items"></div>
+</div>
+
 <div id="preview"></div>
-<div id="info">Click anywhere to begin</div>
+<button id="reset-filter">SHOW ALL</button>
+
+<div id="info">
+  <div id="info-text">
+    <div id="info-title">Click a node to explore</div>
+  </div>
+</div>
 
 <script>
-const audio = document.getElementById("bg-music");
+// ── Category colors ────────────────────────────────────────────────────────────
+const CATEGORY_COLORS = {
+  'Archive':     '#e8a838',
+  'Artifact':    '#a78bfa',
+  'Blog':        '#4ade80',
+  'Book':        '#60a5fa',
+  'Bookstore':   '#34d399',
+  'Data':        '#f87171',
+  'Entourage':   '#2dd4bf',
+  'Film':        '#fb923c',
+  'Guide':       '#facc15',
+  'Institution': '#94a3b8',
+  'Mapping':     '#38bdf8',
+  'Materials':   '#a3e635',
+  'Practice':    '#e879f9',
+  'Publication': '#f43f5e',
+  'Reference':   '#cbd5e1',
+  'Software':    '#22d3ee',
+  'Sound':       '#fb7185',
+  'Tool':        '#fbbf24',
+};
+
+function catColor(cat) {
+  return CATEGORY_COLORS[cat] || '#888888';
+}
+
+// ── Music ──────────────────────────────────────────────────────────────────────
+const audio = document.getElementById('bg-music');
 let musicStarted = false;
 
 function startMusic() {
   if (!musicStarted) {
     audio.volume = 0.5;
-    audio.play().then(() => {
-      musicStarted = true;
-    }).catch(() => {});
+    audio.play().then(() => { musicStarted = true; }).catch(() => {});
   }
 }
+document.body.addEventListener('click', startMusic, { once: true });
 
-document.body.addEventListener("click", startMusic, { once: true });
-
-// --- CLEAN IMAGE LIST (only reliable files) ---
+// ── Image stream ───────────────────────────────────────────────────────────────
 const streamImages = [
   "images/516241.jpg",
   "images/5bd259f159aea7da80129db766bf2df1.jpg",
@@ -110,39 +294,50 @@ const streamImages = [
 ];
 
 function startImageStream() {
-  const container = document.getElementById("stream");
-  const img = document.createElement("img");
+  const container = document.getElementById('stream');
+  const img = document.createElement('img');
   container.appendChild(img);
-
   function nextImage() {
-    const i = Math.floor(Math.random() * streamImages.length);
-    img.src = streamImages[i];
+    img.src = streamImages[Math.floor(Math.random() * streamImages.length)];
   }
-
-  img.onerror = () => {
-    console.log("Image failed:", img.src);
-    nextImage();
-  };
-
+  img.onerror = () => nextImage();
   nextImage();
   setInterval(nextImage, 900);
 }
 
-// --- LOAD NETWORK ---
-fetch("network.json")
+// ── Load network ───────────────────────────────────────────────────────────────
+fetch('network.json')
   .then(res => res.json())
   .then(data => {
 
     const nodes = data.map(n => ({
-      data: { id: n.url, label: n.title || n.url, url: n.url }
+      data: {
+        id:          n.url,
+        label:       n.title || n.url,
+        url:         n.url,
+        category:    n.category || 'Reference',
+        tags:        n.tags || [],
+        description: n.description || '',
+      }
     }));
 
+    const edgeSet = new Set();
     const edges = [];
     data.forEach(n => {
       (n.connections || []).forEach(t => {
-        edges.push({ data: { source: n.url, target: t } });
+        const key = [n.url, t].sort().join('|||');
+        if (!edgeSet.has(key)) {
+          edgeSet.add(key);
+          edges.push({ data: { source: n.url, target: t } });
+        }
       });
     });
+
+    // Per-category color selectors
+    const catStyles = Object.entries(CATEGORY_COLORS).map(([cat, color]) => ({
+      selector: `node[category = "${cat}"]`,
+      style: { 'background-color': color, 'border-color': color }
+    }));
 
     const cy = cytoscape({
       container: document.getElementById('cy'),
@@ -152,77 +347,159 @@ fetch("network.json")
         {
           selector: 'node',
           style: {
-            'label': 'data(label)',
-            'shape': 'ellipse',
-            'width': 22,
-            'height': 22,
-            'background-fill': 'radial-gradient',
-            'background-gradient-stop-colors': '#ffffff #bbbbbb #666666 #222222',
-            'background-gradient-stop-positions': '0% 25% 60% 100%',
-            'border-width': 1,
-            'border-color': '#888',
-
-            'font-size': '9px',
-            'color': '#ffffff',
-            'font-family': 'Public Sans',
-            'font-weight': 300,
-
-            'text-valign': 'top',
-            'text-margin-y': -6,
-            'text-background-color': '#3a3a3a',
-            'text-background-opacity': 0.6,
-            'text-background-padding': '2px'
+            'label':                    'data(label)',
+            'shape':                    'ellipse',
+            'width':                    18,
+            'height':                   18,
+            'background-color':         '#666',
+            'border-width':             1.5,
+            'border-color':             '#666',
+            'border-opacity':           0.8,
+            'font-size':                '8px',
+            'color':                    '#ffffff',
+            'font-family':              'Public Sans',
+            'font-weight':              300,
+            'text-valign':              'top',
+            'text-margin-y':            -5,
+            'text-background-color':    '#1a1a1a',
+            'text-background-opacity':  0.75,
+            'text-background-padding':  '2px',
           }
+        },
+        ...catStyles,
+        {
+          selector: 'node.faded',
+          style: { 'opacity': 0.07 }
+        },
+        {
+          selector: 'node:selected',
+          style: { 'border-width': 3, 'border-color': '#fff', 'width': 24, 'height': 24 }
         },
         {
           selector: 'edge',
-          style: {
-            'width': 1,
-            'line-color': '#ffffff',
-            'opacity': 0.3
-          }
+          style: { 'width': 1, 'line-color': '#ffffff', 'opacity': 0.18 }
+        },
+        {
+          selector: 'edge.faded',
+          style: { 'opacity': 0.02 }
         }
       ],
 
       layout: {
-        name: 'cose',
-        animate: true,
+        name:             'cose',
+        animate:          true,
         animationDuration: 1500,
-        nodeRepulsion: 1400000,
-        idealEdgeLength: 200,
-        padding: 100
+        nodeRepulsion:    1400000,
+        idealEdgeLength:  200,
+        padding:          100,
       }
     });
 
+    // ── Build legend ─────────────────────────────────────────────────────────
+    const counts = {};
+    data.forEach(n => {
+      const c = n.category || 'Reference';
+      counts[c] = (counts[c] || 0) + 1;
+    });
+
+    const legendEl = document.getElementById('legend-items');
+    let activeFilter = null;
+
+    Object.entries(CATEGORY_COLORS)
+      .sort((a, b) => (counts[b[0]] || 0) - (counts[a[0]] || 0))
+      .forEach(([cat, color]) => {
+        if (!counts[cat]) return;
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.dataset.cat = cat;
+        item.innerHTML = `
+          <span class="legend-dot" style="background:${color}"></span>
+          <span class="legend-name">${cat}</span>
+          <span class="legend-count">${counts[cat]}</span>
+        `;
+        item.addEventListener('click', () => filterByCategory(cat, item));
+        legendEl.appendChild(item);
+      });
+
+    // Legend collapse
+    document.getElementById('legend-header').addEventListener('click', () => {
+      const items = document.getElementById('legend-items');
+      const toggle = document.getElementById('legend-toggle');
+      const collapsed = items.style.display === 'none';
+      items.style.display = collapsed ? '' : 'none';
+      toggle.textContent = collapsed ? '−' : '+';
+    });
+
+    // ── Category filter ───────────────────────────────────────────────────────
+    function filterByCategory(cat) {
+      if (activeFilter === cat) { resetFilter(); return; }
+      activeFilter = cat;
+
+      cy.nodes().forEach(n => {
+        n.data('category') === cat ? n.removeClass('faded') : n.addClass('faded');
+      });
+      cy.edges().forEach(e => {
+        const connected = e.source().data('category') === cat || e.target().data('category') === cat;
+        connected ? e.removeClass('faded') : e.addClass('faded');
+      });
+
+      document.querySelectorAll('.legend-item').forEach(el => {
+        const match = el.dataset.cat === cat;
+        el.classList.toggle('active', match);
+        el.classList.toggle('dimmed', !match);
+      });
+
+      document.getElementById('reset-filter').style.display = 'block';
+    }
+
+    function resetFilter() {
+      activeFilter = null;
+      cy.nodes().removeClass('faded');
+      cy.edges().removeClass('faded');
+      document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active', 'dimmed'));
+      document.getElementById('reset-filter').style.display = 'none';
+    }
+
+    document.getElementById('reset-filter').addEventListener('click', resetFilter);
+
+    // ── Node interaction ──────────────────────────────────────────────────────
     cy.on('tap', () => startMusic());
 
-    // --- SIMPLIFIED + RELIABLE PREVIEW ---
     cy.on('tap', 'node', evt => {
-      const node = evt.target.data();
+      const d = evt.target.data();
+      const color = catColor(d.category);
+      const tagsHtml = (d.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
 
-      document.getElementById("info").innerHTML = `
-        <strong>${node.label}</strong><br>
-        <a href="${node.url}" target="_blank">Visit site</a>
+      document.getElementById('info-text').innerHTML = `
+        <div id="info-title">${d.label}</div>
+        <div id="info-meta">
+          <span id="info-category" style="background:${color}22;color:${color}">${d.category}</span>
+          ${tagsHtml}
+        </div>
+        ${d.description ? `<div id="info-description">${d.description}</div>` : ''}
       `;
 
-      const preview = document.getElementById("preview");
+      const info = document.getElementById('info');
+      const existing = info.querySelector('#info-link');
+      if (existing) existing.remove();
+      const link = document.createElement('a');
+      link.id = 'info-link';
+      link.href = d.url;
+      link.target = '_blank';
+      link.textContent = 'VISIT →';
+      info.appendChild(link);
+
+      const preview = document.getElementById('preview');
       preview.innerHTML = `<img id="preview-img">`;
-
-      const img = document.getElementById("preview-img");
-
-      // fast + reliable preview
-      img.src = `https://image.thum.io/get/width/800/${node.url}`;
-
+      const img = document.getElementById('preview-img');
+      img.src = `https://image.thum.io/get/width/800/${d.url}`;
       img.onerror = () => {
-        img.src = `https://www.google.com/s2/favicons?sz=128&domain_url=${node.url}`;
+        img.src = `https://www.google.com/s2/favicons?sz=128&domain_url=${d.url}`;
       };
-
-      preview.style.display = "block";
+      preview.style.display = 'block';
     });
 
-    cy.on('dbltap', 'node', evt => {
-      window.open(evt.target.data().url, "_blank");
-    });
+    cy.on('dbltap', 'node', evt => window.open(evt.target.data().url, '_blank'));
 
     setTimeout(startImageStream, 1000);
   });
