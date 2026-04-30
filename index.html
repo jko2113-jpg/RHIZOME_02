@@ -44,19 +44,15 @@
       position: fixed;
       top: 170px;
       left: 20px;
-      width: 200px;
-      background: rgba(12, 12, 12, 0.9);
-      border: 1px solid #3a3a3a;
+      width: 160px;
       z-index: 10;
     }
 
     #legend-header {
-      padding: 8px 12px;
-      color: #666;
-      letter-spacing: 0.14em;
-      font-size: 10px;
-      font-weight: 600;
-      border-bottom: 1px solid #2a2a2a;
+      padding: 0 0 10px 0;
+      color: #555;
+      font-size: 11px;
+      font-style: italic;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
@@ -64,35 +60,34 @@
       user-select: none;
     }
 
-    #legend-header:hover { color: #aaa; }
+    #legend-header:hover { color: #888; }
 
-    #legend-items {
-      padding: 4px 0;
-      max-height: 340px;
-      overflow-y: auto;
-    }
-
-    #legend-items::-webkit-scrollbar { width: 3px; }
-    #legend-items::-webkit-scrollbar-thumb { background: #333; }
+    #legend-items { padding: 0; }
 
     .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 12px;
+      display: block;
+      padding: 3px 0;
       cursor: pointer;
-      color: #aaa;
-      transition: background 0.1s, color 0.1s;
+      color: #777;
+      transition: color 0.15s;
       user-select: none;
     }
 
-    .legend-item:hover { background: rgba(255,255,255,0.04); color: #ddd; }
+    .legend-item:hover { color: #ddd; }
     .legend-item.active { color: #fff; }
-    .legend-item.dimmed { color: #3a3a3a; }
+    .legend-item.dimmed { color: #252525; }
 
-    .legend-name { flex: 1; font-size: 11px; }
-    .legend-count { color: #444; font-size: 10px; }
-    .legend-item.active .legend-count { color: #777; }
+    .legend-name { font-size: 12px; }
+    .legend-count { display: none; }
+
+    /* ── Category fan lines ───────────────────── */
+    #cat-lines {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 9;
+    }
 
     /* ── Info panel ───────────────────────────── */
     #info {
@@ -211,8 +206,10 @@
 <div id="cy"></div>
 <div id="stream"></div>
 
+<svg id="cat-lines"></svg>
+
 <div id="legend">
-  <div id="legend-header">CATEGORIES <span id="legend-toggle">−</span></div>
+  <div id="legend-header">view by category <span id="legend-toggle">−</span></div>
   <div id="legend-items"></div>
 </div>
 
@@ -424,6 +421,34 @@ fetch('network.json')
       toggle.textContent = collapsed ? '−' : '+';
     });
 
+    // ── Category fan lines ────────────────────────────────────────────────────
+    function drawCategoryLines(cat) {
+      const svg = document.getElementById('cat-lines');
+      svg.innerHTML = '';
+      const item = document.querySelector(`.legend-item[data-cat="${cat}"]`);
+      if (!item) return;
+      const rect = item.getBoundingClientRect();
+      const x1 = rect.right + 6;
+      const y1 = rect.top + rect.height / 2;
+      cy.nodes().forEach(n => {
+        if (n.data('category') !== cat) return;
+        const pos = n.renderedPosition();
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', pos.x);
+        line.setAttribute('y2', pos.y);
+        line.setAttribute('stroke', '#cc3333');
+        line.setAttribute('stroke-width', '0.75');
+        line.setAttribute('opacity', '0.65');
+        svg.appendChild(line);
+      });
+    }
+
+    function clearCategoryLines() {
+      document.getElementById('cat-lines').innerHTML = '';
+    }
+
     // ── Category filter ───────────────────────────────────────────────────────
     function filterByCategory(cat) {
       if (activeFilter === cat) { resetFilter(); return; }
@@ -443,6 +468,7 @@ fetch('network.json')
         el.classList.toggle('dimmed', !match);
       });
 
+      drawCategoryLines(cat);
       document.getElementById('reset-filter').style.display = 'block';
     }
 
@@ -451,10 +477,13 @@ fetch('network.json')
       cy.nodes().removeClass('faded');
       cy.edges().removeClass('faded');
       document.querySelectorAll('.legend-item').forEach(el => el.classList.remove('active', 'dimmed'));
+      clearCategoryLines();
       document.getElementById('reset-filter').style.display = 'none';
     }
 
     document.getElementById('reset-filter').addEventListener('click', resetFilter);
+
+    cy.on('viewport', () => { if (activeFilter) drawCategoryLines(activeFilter); });
 
     // ── Node interaction ──────────────────────────────────────────────────────
     cy.on('tap', () => startMusic());
