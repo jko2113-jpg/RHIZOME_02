@@ -88,14 +88,6 @@
     .legend-item:hover { background: rgba(255,255,255,0.04); color: #ddd; }
     .legend-item.active { color: #fff; }
     .legend-item.dimmed { color: #3a3a3a; }
-    .legend-item.dimmed .legend-dot { opacity: 0.2; }
-
-    .legend-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
 
     .legend-name { flex: 1; font-size: 11px; }
     .legend-count { color: #444; font-size: 10px; }
@@ -415,7 +407,6 @@ fetch('network.json')
         item.className = 'legend-item';
         item.dataset.cat = cat;
         item.innerHTML = `
-          <span class="legend-dot" style="background:${color}"></span>
           <span class="legend-name">${cat}</span>
           <span class="legend-count">${counts[cat]}</span>
         `;
