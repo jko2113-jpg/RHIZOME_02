@@ -541,15 +541,17 @@ fetch('network.json')
     function positionCoordElement(n) {
       const el = coordMap.get(n.id());
       if (!el) return;
-      const bb  = n.renderedBoundingBox({ includeLabels: false, includeOverlays: false });
-      const gp  = n.position();
-      const ox  = bb.x1;
-      const oy  = bb.y2 + 6;
+      const bb   = n.renderedBoundingBox({ includeLabels: false, includeOverlays: false });
+      const rp   = n.renderedPosition();
+      const gp   = n.position();
+      const nodeRadius = (bb.y2 - bb.y1) / 2;
+      const ox   = rp.x;
+      const oy   = rp.y + Math.max(nodeRadius + 5, 16);
       const axLen = 7;
-      el.xLine.setAttribute('x1', ox);           el.xLine.setAttribute('y1', oy);
-      el.xLine.setAttribute('x2', ox + axLen);   el.xLine.setAttribute('y2', oy);
-      el.yLine.setAttribute('x1', ox);           el.yLine.setAttribute('y1', oy);
-      el.yLine.setAttribute('x2', ox);           el.yLine.setAttribute('y2', oy - axLen);
+      el.xLine.setAttribute('x1', ox);          el.xLine.setAttribute('y1', oy);
+      el.xLine.setAttribute('x2', ox + axLen);  el.xLine.setAttribute('y2', oy);
+      el.yLine.setAttribute('x1', ox);          el.yLine.setAttribute('y1', oy);
+      el.yLine.setAttribute('x2', ox);          el.yLine.setAttribute('y2', oy - axLen);
       el.txt.setAttribute('x', ox + axLen + 3);
       el.txt.setAttribute('y', oy + 4);
       el.txt.textContent = `${Math.round(gp.x)}, ${Math.round(gp.y)}`;
