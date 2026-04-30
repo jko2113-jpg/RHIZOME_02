@@ -545,7 +545,7 @@ fetch('network.json')
       const gp  = n.position();
       const ox  = rp.x;
       const oy  = rp.y + 14;
-      const axLen = 7;
+      const axLen = 5;
       el.xLine.setAttribute('x1', ox);           el.xLine.setAttribute('y1', oy);
       el.xLine.setAttribute('x2', ox + axLen);   el.xLine.setAttribute('y2', oy);
       el.yLine.setAttribute('x1', ox);           el.yLine.setAttribute('y1', oy);
@@ -564,11 +564,11 @@ fetch('network.json')
         const yLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         const txt   = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         for (const ln of [xLine, yLine]) {
-          ln.setAttribute('stroke', '#555');
-          ln.setAttribute('stroke-width', '0.6');
+          ln.setAttribute('stroke', '#383838');
+          ln.setAttribute('stroke-width', '0.5');
         }
-        txt.setAttribute('font-size', '7');
-        txt.setAttribute('fill', '#555');
+        txt.setAttribute('font-size', '6');
+        txt.setAttribute('fill', '#383838');
         txt.setAttribute('font-family', 'Public Sans');
         txt.setAttribute('font-weight', '100');
         g.append(xLine, yLine, txt);
