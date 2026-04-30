@@ -541,7 +541,7 @@ fetch('network.json')
     function positionCoordElement(n) {
       const el = coordMap.get(n.id());
       if (!el) return;
-      const bb  = n.renderedBoundingBox();
+      const bb  = n.renderedBoundingBox({ includeLabels: false, includeOverlays: false });
       const gp  = n.position();
       const ox  = bb.x1;
       const oy  = bb.y2 + 6;
