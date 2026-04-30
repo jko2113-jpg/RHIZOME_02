@@ -89,6 +89,15 @@
       z-index: 9;
     }
 
+    /* ── Coordinate overlay ───────────────────── */
+    #coord-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 8;
+    }
+
     /* ── Info panel ───────────────────────────── */
     #info {
       position: fixed;
@@ -206,6 +215,7 @@
 <div id="cy"></div>
 <div id="stream"></div>
 
+<svg id="coord-overlay"></svg>
 <svg id="cat-lines"></svg>
 
 <div id="legend">
@@ -523,6 +533,54 @@ fetch('network.json')
     });
 
     cy.on('dbltap', 'node', evt => window.open(evt.target.data().url, '_blank'));
+
+    // ── Coordinate overlay ────────────────────────────────────────────────────
+    const coordSvg = document.getElementById('coord-overlay');
+    const coordMap = new Map();
+
+    function positionCoordElement(n) {
+      const el = coordMap.get(n.id());
+      if (!el) return;
+      const rp  = n.renderedPosition();
+      const gp  = n.position();
+      const ox  = rp.x;
+      const oy  = rp.y + 14;
+      const axLen = 7;
+      el.xLine.setAttribute('x1', ox);           el.xLine.setAttribute('y1', oy);
+      el.xLine.setAttribute('x2', ox + axLen);   el.xLine.setAttribute('y2', oy);
+      el.yLine.setAttribute('x1', ox);           el.yLine.setAttribute('y1', oy);
+      el.yLine.setAttribute('x2', ox);           el.yLine.setAttribute('y2', oy - axLen);
+      el.txt.setAttribute('x', ox + axLen + 2);
+      el.txt.setAttribute('y', oy + 3);
+      el.txt.textContent = `${Math.round(gp.x)}, ${Math.round(gp.y)}`;
+    }
+
+    function createCoordElements() {
+      coordSvg.innerHTML = '';
+      coordMap.clear();
+      cy.nodes().forEach(n => {
+        const g     = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        const xLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const yLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const txt   = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        for (const ln of [xLine, yLine]) {
+          ln.setAttribute('stroke', '#555');
+          ln.setAttribute('stroke-width', '0.6');
+        }
+        txt.setAttribute('font-size', '7');
+        txt.setAttribute('fill', '#555');
+        txt.setAttribute('font-family', 'Public Sans');
+        txt.setAttribute('font-weight', '100');
+        g.append(xLine, yLine, txt);
+        coordSvg.appendChild(g);
+        coordMap.set(n.id(), { xLine, yLine, txt });
+        positionCoordElement(n);
+      });
+    }
+
+    cy.one('layoutstop', createCoordElements);
+    cy.on('drag', 'node', evt => positionCoordElement(evt.target));
+    cy.on('viewport', () => cy.nodes().forEach(n => positionCoordElement(n)));
 
     setTimeout(startImageStream, 1000);
   });
