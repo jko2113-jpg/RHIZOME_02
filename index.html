@@ -541,17 +541,17 @@ fetch('network.json')
     function positionCoordElement(n) {
       const el = coordMap.get(n.id());
       if (!el) return;
-      const rp  = n.renderedPosition();
+      const bb  = n.renderedBoundingBox();
       const gp  = n.position();
-      const ox  = rp.x;
-      const oy  = rp.y + 14;
-      const axLen = 5;
+      const ox  = bb.x1;
+      const oy  = bb.y2 + 6;
+      const axLen = 7;
       el.xLine.setAttribute('x1', ox);           el.xLine.setAttribute('y1', oy);
       el.xLine.setAttribute('x2', ox + axLen);   el.xLine.setAttribute('y2', oy);
       el.yLine.setAttribute('x1', ox);           el.yLine.setAttribute('y1', oy);
       el.yLine.setAttribute('x2', ox);           el.yLine.setAttribute('y2', oy - axLen);
-      el.txt.setAttribute('x', ox + axLen + 2);
-      el.txt.setAttribute('y', oy + 3);
+      el.txt.setAttribute('x', ox + axLen + 3);
+      el.txt.setAttribute('y', oy + 4);
       el.txt.textContent = `${Math.round(gp.x)}, ${Math.round(gp.y)}`;
     }
 
@@ -564,11 +564,11 @@ fetch('network.json')
         const yLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
         const txt   = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         for (const ln of [xLine, yLine]) {
-          ln.setAttribute('stroke', '#383838');
-          ln.setAttribute('stroke-width', '0.5');
+          ln.setAttribute('stroke', '#888');
+          ln.setAttribute('stroke-width', '0.8');
         }
-        txt.setAttribute('font-size', '6');
-        txt.setAttribute('fill', '#383838');
+        txt.setAttribute('font-size', '9');
+        txt.setAttribute('fill', '#999');
         txt.setAttribute('font-family', 'Public Sans');
         txt.setAttribute('font-weight', '100');
         g.append(xLine, yLine, txt);
